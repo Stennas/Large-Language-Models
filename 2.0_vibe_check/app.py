@@ -5,7 +5,7 @@ from vibe_model import analyze_vibes
 st.set_page_config(page_title="Vibe Check", page_icon="✨", layout="centered")
 
 st.title("✨ Vibe Check App")
-st.write("Paste a chat or message below and I'll analyze the vibes 👇")
+st.write("Paste a chat or message below to check the pulse of your conversations! 👇")
 
 user_input = st.text_area("Enter your message:")
 
