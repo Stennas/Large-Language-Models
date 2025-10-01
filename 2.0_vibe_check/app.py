@@ -1,45 +1,45 @@
 import streamlit as st
-import time
 from vibe_model import analyze_vibes
 
-# Streamlit UI setup
+# Streamlit UI
 st.set_page_config(page_title="Vibe Check", page_icon="✨", layout="centered")
 st.title("✨ Vibe Check App")
-st.write("Paste a chat or message below to get an intelligent vibe analysis 👇")
+st.write("Paste a chat or message below to get a thoughtful vibe analysis 👇")
 
 user_input = st.text_area("Enter your message:")
 
+def interpret_sarcasm(label):
+    """Map sarcasm model output to human-friendly text."""
+    if isinstance(label, str):
+        # Check common label patterns
+        if "LABEL_1" in label or "sarcastic" in label.lower():
+            return "Sarcastic / Playful tone"
+        else:
+            return "Not sarcastic / Serious tone"
+    return "Not sarcastic / Serious tone"
+
 def generate_summary(results):
-    """Generate a smart narrative summary based on sentiment, sarcasm, and emotion."""
-    sentiment = results['sentiment']['label']
+    """Produce a human-like summary based on sentiment, emotion, and sarcasm."""
+    sentiment = results['sentiment']['label'].upper()
     emotion = results['emotion']['label'].lower()
-    sarcasm_label = results['sarcasm']['label']
+    sarcasm = interpret_sarcasm(results['sarcasm'])
 
-    summary_parts = []
-
-    # Sarcasm insight
-    if "LABEL_1" in sarcasm_label or "sarcastic" in sarcasm_label.lower():
-        summary_parts.append("The message has a playful or teasing undertone.")
-    
-    # Sentiment + emotion insight
-    if sentiment.upper() == "POSITIVE" and emotion in ["joy", "surprise"]:
-        summary_parts.append("Overall, the text feels cheerful and encouraging.")
-    elif sentiment.upper() == "NEGATIVE" and emotion in ["sadness", "anger", "fear"]:
-        summary_parts.append("There’s concern, frustration, or disappointment expressed.")
-    elif sentiment.upper() == "NEGATIVE" and emotion in ["joy", "surprise"]:
-        summary_parts.append("Despite a critical tone, there’s a hint of lightheartedness.")
-    else:
-        summary_parts.append("The conversation feels balanced or neutral in tone.")
-    
-    return " ".join(summary_parts)
+    if "Sarcastic" in sarcasm:
+        return "The speaker is making a playful or teasing remark."
+    if sentiment == "NEGATIVE" and emotion in ["sadness", "anger", "fear"]:
+        return "The message expresses concern, frustration, or self-reflection."
+    if sentiment == "POSITIVE" and emotion in ["joy", "surprise"]:
+        return "The message is uplifting, lighthearted, or encouraging."
+    if sentiment == "NEUTRAL" and emotion in ["neutral", "calm"]:
+        return "The statement is reflective or matter-of-fact in tone."
+    return "The message conveys a nuanced or balanced tone."
 
 if st.button("Analyze"):
     if user_input.strip():
         with st.spinner("Analyzing vibes..."):
-            time.sleep(0.8)  # slight delay for UX
             results = analyze_vibes(user_input)
 
-        # --- Interpret sentiment ---
+        # Interpret sentiment
         sentiment_map = {
             "POSITIVE": "Positive / Uplifting",
             "NEGATIVE": "Negative / Critical",
@@ -47,14 +47,10 @@ if st.button("Analyze"):
         }
         sentiment_text = sentiment_map.get(results['sentiment']['label'].upper(), results['sentiment']['label'])
 
-        # --- Interpret sarcasm ---
-        sarcasm_label = results['sarcasm']
-        if "LABEL_0" in sarcasm_label:
-            sarcasm_text = "Not sarcastic"
-        else:
-            sarcasm_text = "Sarcastic / Playful tone"
+        # Interpret sarcasm
+        sarcasm_text = interpret_sarcasm(results['sarcasm'])
 
-        # --- Interpret dominant emotion ---
+        # Interpret dominant emotion
         emotion_map = {
             "joy": "Lighthearted / Humorous",
             "anger": "Frustrated / Upset",
@@ -66,22 +62,13 @@ if st.button("Analyze"):
         }
         emotion_text = emotion_map.get(results['emotion']['label'].lower(), results['emotion']['label'])
 
-        # --- Optional tone hint ---
-        tone_hint = ""
-        if sentiment_text.startswith("Positive") and "Humorous" in emotion_text:
-            tone_hint = "This message comes across as friendly and playful."
-        elif sentiment_text.startswith("Negative") and "Sad" in emotion_text:
-            tone_hint = "The message shows self-critique or mild frustration."
-
-        # --- Display results ---
+        # Display results
         st.subheader("🎭 Vibe Analysis")
         st.write(f"**Sentiment:** {sentiment_text}")
         st.write(f"**Sarcasm:** {sarcasm_text}")
         st.write(f"**Dominant Emotion:** {emotion_text}")
-        if tone_hint:
-            st.write(f"**Tone Insight:** {tone_hint}")
 
-        # --- Smart summary ---
+        # Smart summary
         summary_text = generate_summary(results)
         st.markdown(
             f"<div style='background-color:#f0f2f6;padding:12px;border-radius:6px'><strong>Summary:</strong> {summary_text}</div>",
