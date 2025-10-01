@@ -13,7 +13,7 @@ def generate_summary(results):
     """Generate a smart narrative summary based on sentiment, sarcasm, and emotion."""
     sentiment = results['sentiment']['label']
     emotion = results['emotion']['label'].lower()
-    sarcasm_label = results['sarcasm']
+    sarcasm_label = results['sarcasm']['label']
 
     summary_parts = []
 
