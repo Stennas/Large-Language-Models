@@ -4,7 +4,7 @@ from vibe_model import analyze_vibes
 # Streamlit UI
 st.set_page_config(page_title="Vibe Check", page_icon="✨", layout="centered")
 st.title("✨ Vibe Check App")
-st.write("Paste a chat or message below to get a vibe analysis 👇")
+st.write("Paste a chat or message below to get a thoughtful vibe analysis 👇")
 
 user_input = st.text_area("Enter your message:")
 
@@ -12,26 +12,31 @@ def interpret_sarcasm(label):
     """Map sarcasm model output to human-friendly text."""
     if isinstance(label, str):
         if "LABEL_1" in label or "sarcastic" in label.lower():
-            return "Sarcastic / Playful tone"
+            return "Sarcastic"
         else:
-            return "Not sarcastic / Serious tone"
-    return "Not sarcastic / Serious tone"
+            return "Not Sarcastic"
+    return "Not Sarcastic"
 
 def generate_summary(results):
     """Produce a human-like summary based on sentiment, emotion, and sarcasm."""
-    sentiment = results['sentiment']['label'].upper()
-    emotion = results['emotion']['label'].lower()
+    sentiment = results['sentiment']['label']
+    emotion = results['emotion']['label']
     sarcasm = interpret_sarcasm(results['sarcasm'])
 
-    if "Sarcastic" in sarcasm:
-        return "The speaker is making a playful or teasing remark."
-    if sentiment == "NEGATIVE" and emotion in ["sadness", "anger", "fear"]:
-        return "The message expresses concern, frustration, or self-reflection."
-    if sentiment == "POSITIVE" and emotion in ["joy", "surprise"]:
-        return "The message is uplifting, lighthearted, or encouraging."
-    if sentiment == "NEUTRAL" and emotion in ["neutral", "calm"]:
-        return "The statement is reflective or matter-of-fact in tone."
-    return "The message conveys a nuanced or balanced tone."
+    # Core summary logic
+    if sentiment == "Negative" and emotion in ["Sadness", "Anger", "Fear"]:
+        base_summary = "The message expresses concern, frustration, or self-reflection."
+    elif sentiment == "Positive" and emotion in ["Joy", "Surprise"]:
+        base_summary = "The message is uplifting, lighthearted, or encouraging."
+    elif sentiment == "Neutral" and emotion in ["Calm", "Neutral"]:
+        base_summary = "The statement is reflective or matter-of-fact in tone."
+    else:
+        base_summary = "The message conveys a nuanced or balanced tone."
+
+    # Add sarcasm flavor (without overriding everything)
+    if sarcasm == "Sarcastic":
+        return base_summary + " However, it carries a sarcastic or playful undertone."
+    return base_summary
 
 if st.button("Analyze"):
     if user_input.strip():
