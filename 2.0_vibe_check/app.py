@@ -4,7 +4,7 @@ from vibe_model import analyze_vibes
 # Streamlit UI
 st.set_page_config(page_title="Vibe Check", page_icon="✨", layout="centered")
 st.title("✨ Vibe Check App")
-st.write("Paste a chat or message below to get a thoughtful vibe analysis 👇")
+st.write("Paste a chat or message below to get a vibe analysis 👇")
 
 user_input = st.text_area("Enter your message:")
 
