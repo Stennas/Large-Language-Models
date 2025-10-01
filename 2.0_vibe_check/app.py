@@ -1,72 +1,77 @@
 import streamlit as st
 from vibe_model import analyze_vibes
 
-st.set_page_config(page_title="Vibe Check App", page_icon="✨", layout="centered")
-
+# Streamlit UI
+st.set_page_config(page_title="Vibe Check", page_icon="✨", layout="centered")
 st.title("✨ Vibe Check App")
-st.write("Paste a sentence or chat below to analyze its vibe.")
+st.write("Paste a chat or message below to get a vibe analysis 👇")
 
-# User input
-user_input = st.text_area("Enter text:", height=120)
+user_input = st.text_area("Enter your message:")
 
-# Badge colors
-badge_colors = {
-    "Positive": "green",
-    "Neutral": "gray",
-    "Negative": "red",
-    "Joy": "orange",
-    "Anger": "red",
-    "Sadness": "blue",
-    "Fear": "purple",
-    "Disgust": "brown",
-    "Surprise": "pink",
-    "Calm": "teal",
-    "Sarcastic": "orange",
-    "Not Sarcastic": "gray",
-}
+def interpret_sarcasm(label):
+    """Map sarcasm model output to human-friendly text."""
+    if isinstance(label, str):
+        if "LABEL_1" in label or "sarcastic" in label.lower():
+            return "Sarcastic / Playful tone"
+        else:
+            return "Not sarcastic / Serious tone"
+    return "Not sarcastic / Serious tone"
 
-# Generate summary
 def generate_summary(results):
-    sentiment = results["sentiment"]
-    emotion = results["emotion"]
-    sarcasm = results["sarcasm"]
+    """Produce a human-like summary based on sentiment, emotion, and sarcasm."""
+    sentiment = results['sentiment']['label'].upper()
+    emotion = results['emotion']['label'].lower()
+    sarcasm = interpret_sarcasm(results['sarcasm'])
 
-    if sarcasm == "Sarcastic":
-        return f"The text has a **{sentiment.lower()}** tone, leans towards **{emotion.lower()}**, and carries a **sarcastic undertone**."
-    else:
-        return f"The text has a **{sentiment.lower()}** tone, with a dominant feeling of **{emotion.lower()}**, and is expressed in a straightforward way."
+    if "Sarcastic" in sarcasm:
+        return "The speaker is making a playful or teasing remark."
+    if sentiment == "NEGATIVE" and emotion in ["sadness", "anger", "fear"]:
+        return "The message expresses concern, frustration, or self-reflection."
+    if sentiment == "POSITIVE" and emotion in ["joy", "surprise"]:
+        return "The message is uplifting, lighthearted, or encouraging."
+    if sentiment == "NEUTRAL" and emotion in ["neutral", "calm"]:
+        return "The statement is reflective or matter-of-fact in tone."
+    return "The message conveys a nuanced or balanced tone."
 
-# Analyze button
-if st.button("Analyze ✨"):
+if st.button("Analyze"):
     if user_input.strip():
         with st.spinner("Analyzing vibes..."):
             results = analyze_vibes(user_input)
 
-        # Show badges
-        st.subheader("Vibe Badges")
-        col1, col2, col3 = st.columns(3)
+        # Interpret sentiment
+        sentiment_map = {
+            "Positive": "Positive / Uplifting",
+            "Negative": "Negative / Critical",
+            "Neutral": "Neutral / Matter-of-fact"
+        }
+        sentiment_text = sentiment_map.get(results['sentiment']['label'], results['sentiment']['label'])
 
-        with col1:
-            st.markdown(
-                f"<span style='background-color:{badge_colors.get(results['sentiment'], 'gray')}; "
-                f"padding:6px 12px; border-radius:12px; color:white;'>Sentiment: {results['sentiment']}</span>",
-                unsafe_allow_html=True,
-            )
-        with col2:
-            st.markdown(
-                f"<span style='background-color:{badge_colors.get(results['emotion'], 'gray')}; "
-                f"padding:6px 12px; border-radius:12px; color:white;'>Emotion: {results['emotion']}</span>",
-                unsafe_allow_html=True,
-            )
-        with col3:
-            st.markdown(
-                f"<span style='background-color:{badge_colors.get(results['sarcasm'], 'gray')}; "
-                f"padding:6px 12px; border-radius:12px; color:white;'>Sarcasm: {results['sarcasm']}</span>",
-                unsafe_allow_html=True,
-            )
+        # Interpret sarcasm
+        sarcasm_text = interpret_sarcasm(results['sarcasm'])
 
-        # Show refined summary
-        st.subheader("Refined Summary")
-        st.info(generate_summary(results))
+        # Interpret dominant emotion
+        emotion_map = {
+            "Joy": "Lighthearted / Humorous",
+            "Anger": "Frustrated / Upset",
+            "Sadness": "Sad / Self-critical",
+            "Fear": "Anxious / Concerned",
+            "Disgust": "Disgust / Disapproval",
+            "Surprise": "Surprised / Shocked",
+            "Calm": "Calm / Matter-of-fact"
+        }
+        emotion_text = emotion_map.get(results['emotion']['label'], results['emotion']['label'])
+
+        # Display results
+        st.subheader("🎭 Vibe Analysis")
+        st.write(f"**Sentiment:** {sentiment_text}")
+        st.write(f"**Sarcasm:** {sarcasm_text}")
+        st.write(f"**Dominant Emotion:** {emotion_text}")
+
+        # Smart summary
+        summary_text = generate_summary(results)
+        st.markdown(
+            f"<div style='background-color:#f0f2f6;padding:12px;border-radius:6px'><strong>Summary:</strong> {summary_text}</div>",
+            unsafe_allow_html=True
+        )
     else:
-        st.warning("⚠️ Please enter some text first.")
+        st.warning("Please enter some text first!")

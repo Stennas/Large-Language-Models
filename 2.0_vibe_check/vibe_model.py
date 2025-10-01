@@ -1,37 +1,44 @@
 from transformers import pipeline
 
-# Sentiment: CardiffNLP Twitter model (3 classes: Positive, Neutral, Negative)
-sentiment_analyzer = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+# Load pre-trained models
+sentiment = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+sarcasm = pipeline("text-classification", model="helinivan/english-sarcasm-detector", return_all_scores=False)
+emotion = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", return_all_scores=True)
 
-# Emotion classifier: multi-class emotions
-emotion_analyzer = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=None)
+def analyze_vibes(text):
+    # --- Sentiment ---
+    raw_sentiment = sentiment(text)[0]['label'].upper()
+    sentiment_map = {
+        "POSITIVE": "Positive",
+        "NEGATIVE": "Negative",
+        "NEUTRAL": "Neutral"
+    }
+    sentiment_label = sentiment_map.get(raw_sentiment, raw_sentiment)
 
-# Sarcasm detector
-sarcasm_analyzer = pipeline("text-classification", model="mrm8488/t5-base-finetuned-sarcasm-twitter", top_k=None)
+    # --- Sarcasm ---
+    raw_sarcasm = sarcasm(text)[0]['label']
+    sarcasm_map = {
+        "LABEL_0": "Not Sarcastic",
+        "LABEL_1": "Sarcastic"
+    }
+    sarcasm_label = sarcasm_map.get(raw_sarcasm, raw_sarcasm)
 
-def analyze_vibes(text: str):
-    """
-    Analyze sentiment, emotion, and sarcasm for a given text.
-    Returns clean labels only (no scores).
-    """
-
-    # Sentiment
-    sentiment_result = sentiment_analyzer(text)[0]
-    sentiment_label = sentiment_result["label"]
-
-    # Emotion → pick strongest
-    emotions = emotion_analyzer(text)
-    emotions_sorted = sorted(emotions, key=lambda x: x["score"], reverse=True)
-    emotion_label = emotions_sorted[0]["label"]
-
-    # Sarcasm
-    sarcasm_result = sarcasm_analyzer(text)[0]
-    sarcasm_label = (
-        "Sarcastic" if sarcasm_result["label"].lower() == "sarcasm" else "Not Sarcastic"
-    )
+    # --- Emotion ---
+    emotion_results = emotion(text)[0]
+    top_emotion = max(emotion_results, key=lambda x: x['score'])
+    emotion_map = {
+        "joy": "Joy",
+        "anger": "Anger",
+        "sadness": "Sadness",
+        "fear": "Fear",
+        "disgust": "Disgust",
+        "surprise": "Surprise",
+        "neutral": "Calm"
+    }
+    emotion_label = emotion_map.get(top_emotion['label'].lower(), top_emotion['label'])
 
     return {
-        "sentiment": sentiment_label,
-        "emotion": emotion_label,
+        "sentiment": {"label": sentiment_label},
         "sarcasm": sarcasm_label,
+        "emotion": {"label": emotion_label}
     }
