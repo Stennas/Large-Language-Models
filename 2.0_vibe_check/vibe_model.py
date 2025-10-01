@@ -2,7 +2,7 @@ from transformers import pipeline
 
 # Load pre-trained models
 sentiment = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-sarcasm = pipeline("text2text-generation", model="mrm8488/t5-base-finetuned-sarcasm-twitter")
+sarcasm = pipeline("text2text-generation", model="mrm8488/t5-base-finetuned-sarcasm-twitter", use_fast=False )
 emotion = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", return_all_scores=True)
 
 def analyze_vibes(text):
