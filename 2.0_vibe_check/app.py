@@ -1,65 +1,60 @@
 import streamlit as st
 from vibe_model import analyze_vibes
+import time
 
-# Streamlit UI
+# Streamlit UI setup
 st.set_page_config(page_title="Vibe Check", page_icon="✨", layout="centered")
+
 st.title("✨ Vibe Check App")
-st.write("Paste a chat or message below to get a meaningful vibe analysis 👇")
+st.write("Paste a chat or message below to check the conversation vibe 👇")
+
+# Session state to track button click
+if "analyzed" not in st.session_state:
+    st.session_state.analyzed = False
 
 user_input = st.text_area("Enter your message:")
 
-if st.button("Analyze"):
-    if user_input.strip():
-        with st.spinner("Analyzing vibes..."):
-            results = analyze_vibes(user_input)
+def get_summary(results):
+    """Generate an intelligent summary based on sentiment, emotion, and sarcasm."""
+    sentiment = results['sentiment']['label']
+    emotion = results['emotion']['label']
+    sarcasm = results['sarcasm']
 
-        # --- Interpret sentiment ---
-        sentiment_map = {
-            "POSITIVE": "Positive / Uplifting",
-            "NEGATIVE": "Negative / Critical",
-            "NEUTRAL": "Neutral / Matter-of-fact"
-        }
-        sentiment_text = sentiment_map.get(results['sentiment']['label'].upper(), results['sentiment']['label'])
+    # Basic interpretive rules
+    if "Sarcastic" in sarcasm:
+        return "This message seems playful or teasing."
+    if sentiment == "Negative" and emotion.lower() in ["joy", "surprise"]:
+        return "Despite a critical tone, there is an underlying sense of lightheartedness."
+    if sentiment == "Positive" and emotion.lower() in ["joy", "surprise"]:
+        return "Overall, the message is cheerful and encouraging."
+    if sentiment == "Negative":
+        return "The message expresses concern or dissatisfaction."
+    return "The conversation feels balanced with neutral undertones."
 
-        # --- Interpret sarcasm ---
-        sarcasm_label = results['sarcasm']
-        if "LABEL_0" in sarcasm_label:
-            sarcasm_text = "Not sarcastic"
-        else:
-            sarcasm_text = "Sarcastic / Playful tone"
+# Button with feedback
+button_placeholder = st.empty()
+analyze_clicked = button_placeholder.button(
+    "Analyze the Vibe" if not st.session_state.analyzed else "Vibe Analyzed ✅"
+)
 
-        # --- Interpret dominant emotion ---
-        emotion_map = {
-            "joy": "Lighthearted / Humorous",
-            "anger": "Frustrated / Upset",
-            "sadness": "Sad / Self-critical",
-            "fear": "Anxious / Concerned",
-            "disgust": "Disgust / Disapproval",
-            "surprise": "Surprised / Shocked",
-            "neutral": "Calm / Matter-of-fact"
-        }
-        emotion_text = emotion_map.get(results['emotion']['label'].lower(), results['emotion']['label'])
+if analyze_clicked and user_input.strip():
+    st.session_state.analyzed = True
+    with st.spinner("Analyzing vibes..."):
+        time.sleep(0.8)  # Slight delay for effect
+        results = analyze_vibes(user_input)
 
-        # --- Optional tone hint ---
-        tone_hint = ""
-        if sentiment_text.startswith("Positive") and "Humorous" in emotion_text:
-            tone_hint = "This message is friendly and playful."
-        elif sentiment_text.startswith("Negative") and "Sad" in emotion_text:
-            tone_hint = "The message contains self-critique or frustration."
+    # Display results
+    st.subheader("🎭 Analysis Results")
+    st.write(f"**Sentiment:** {results['sentiment']['label']}")
+    st.write(f"**Sarcasm:** {results['sarcasm']}")
+    st.write(f"**Dominant Emotion:** {results['emotion']['label']}")
 
-        # --- Display results ---
-        st.subheader("🎭 Vibe Analysis")
-        st.write(f"**Sentiment:** {sentiment_text}")
-        st.write(f"**Sarcasm:** {sarcasm_text}")
-        st.write(f"**Dominant Emotion:** {emotion_text}")
-        if tone_hint:
-            st.write(f"**Tone Insight:** {tone_hint}")
+    # Smart summary
+    summary_text = get_summary(results)
+    st.markdown(
+        f"<div style='background-color:#f0f2f6;padding:12px;border-radius:6px'><strong>Summary:</strong> {summary_text}</div>",
+        unsafe_allow_html=True
+    )
 
-        # --- Summary at the bottom with highlight ---
-        summary_text = f"""
-        This message can be understood as: **{sentiment_text.lower()}, {emotion_text.lower()}, {sarcasm_text.lower()}**.
-        """
-        st.markdown(f"<div style='background-color:#f0f0f0; padding:10px; border-radius:5px'>{summary_text}</div>", unsafe_allow_html=True)
-
-    else:
-        st.warning("Please enter some text first!")
+elif analyze_clicked:
+    st.warning("Please enter some text first!")
